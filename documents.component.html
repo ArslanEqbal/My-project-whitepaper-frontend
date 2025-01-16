@@ -1,0 +1,435 @@
+<div class="product">
+  <div class="topnav">
+    <div class="content">
+      <i class="bi bi-arrow-left" (click)="navigateToProducts()"></i>
+      <p>Admin Dashboard</p>
+    </div>
+    <div class="progress-bar-before-processing" *ngIf="showProgressStatus && uploadStatus && !processingError">
+      <i class="bi bi-clock"></i>
+      <p>{{triggeredByUsername}} : Your uploaded resources are being processed and would take a few minutes.</p>
+    </div>
+
+    <div class="progress-bar-processing-error" *ngIf="processingError">
+      <i class="bi bi-exclamation-triangle"></i>
+      <p>{{triggeredByUsername}} : {{processingErrorMessage}}</p>
+    </div>
+
+    <div class="progress-bar-after-processing"
+      *ngIf="(filteredDocumentNames.length > 0 || filteredJiraFiles.length > 0
+      || filteredConfluenceFiles.length > 0 || filteredWebsiteList.length > 0 ) && (showProgressStatus == false && uploadStatus == true && !processingError)">
+      <i class="bi bi-check2-circle"></i>
+      <p>{{triggeredByUsername}} : Your uploaded resources have been processed. Generate the onboarding material.</p>
+      <button (click)="navigateToBluePrint()">Proceed to Generate Material</button>
+    </div>
+    <div class="progress-bar-after-deleting" *ngIf="deleteStatus && !(showProgressStatus || uploadStatus)">
+      <i class="bi bi-info-circle"></i>
+      <p *ngIf="totalDeletedFiles > 0 && !checkIfNoFilesLeft()">
+        {{triggeredByUsername}} : {{ totalDeletedFiles }} resources have been removed. Regenerate the onboarding
+        material. </p>
+      <button (click)="navigateToBluePrint()" *ngIf="totalDeletedFiles > 0 && !checkIfNoFilesLeft()">
+        Proceed to Generate Material
+      </button>
+      <p *ngIf="checkIfNoFilesLeft()">
+        {{triggeredByUsername}} : All resources have been removed. Upload new resources to use in
+        the GenAI Assistant.</p>
+
+    </div>
+  </div>
+  <div class="main-content">
+    <div class="headings">
+      <div class="title">
+        <p class="breadcrumbs"><span class="breadcrumbs" (click)="navigateToBUList()">Business units</span> > <span
+            class="breadcrumbs" (click)="navigateToProducts()">{{BuName}}</span> > {{productName}}</p>
+        <p class="heading">{{productName}}</p>
+        <p class="sub-heading">Following is the list of resources in {{productName}} </p>
+      </div>
+
+      <div class="search-input-container">
+        <div *ngIf="loading" class="spinner"></div>
+        <div class="search-wrapper">
+          <i class="bi bi-search search-icon"></i>
+          <input type="text" placeholder="Search..." (input)="onSearch($event)" class="search-input" />
+        </div>
+        <div class="dropdown-container">
+          <button (click)="toggleDropdown()" class="upload-btn">
+            ACTION HUB
+          </button>
+          <div *ngIf="isDropdownOpen" class="dropdown-menu">
+            <a (click)="!isGenerateButtonDisabled ? navigateToBluePrint() : null" class="dropdown-item"
+              [ngClass]="{ 'disabled-link': isGenerateButtonDisabled }">
+              <i class="bi bi-file-earmark-text"></i>Generate Material
+
+              <!-- Tooltip element -->
+              <span class="tooltip-menu">
+                {{ isGenerateButtonDisabled ? generateDisabledMessage : 'Use all resources to generate report' }}
+              </span>
+            </a>
+            <a (click)="openUploadPopup()" class="dropdown-item"><i class="bi bi-upload"></i>Upload Resource(s)
+              <span class="tooltip-menu">
+                Add new resources
+              </span></a>
+
+            <a *ngIf="selectedtab == 'internal'" (click)="!isDownloadDeleteButtonDisabled ? downloadFiles() : null"
+              class="dropdown-item" [ngClass]="{ 'disabled-link': isDownloadDeleteButtonDisabled }">
+              <i class="bi bi-download"></i>Download Resource(s)
+              <!-- Tooltip element -->
+              <span class="tooltip-menu">
+                {{ isDownloadDeleteButtonDisabled ? 'No Resource available' : 'Save resources to your system' }}
+              </span>
+            </a>
+            <a (click)="!isDownloadDeleteButtonDisabled ? deleteFiles() : null" class="dropdown-item-last"
+              [ngClass]="{ 'disabled-link': isDownloadDeleteButtonDisabled }">
+              <i class="bi bi-trash"></i>Delete Resource(s)
+              <!-- Tooltip element -->
+              <span class="tooltip-menu">
+                {{ isDownloadDeleteButtonDisabled ? 'No Resource available' : 'Remove resources from storage' }}
+              </span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload Resource Popup -->
+    <div class="confirmation-popup" *ngIf="showUploadResourcePopup">
+      <p class="popup-header">Select the type of resource to upload</p>
+      <div class="popup-content">
+        <a (click)="uploadFiles()" class="dropdown-item-internal">Internal Resources <span>></span></a>
+        <a class="dropdown-item-external">External Resources</a>
+        <a (click)="openExternalResources('jira')" class="dropdown-item-external-resources">Jira <span>></span></a>
+        <a (click)="openExternalResources('confluence')" class="dropdown-item-external-resources">Confluence
+          <span>></span></a>
+        <a (click)="openExternalResources('website')" class="dropdown-item-external-resources">Static website
+          <span>></span></a>
+      </div>
+      <div class="btn-container">
+        <button class="cancel-popup" (click)="showUploadResourcePopup = false">CANCEL</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="resource-type">
+        <button [class.active]="selectedtab === 'internal'" (click)="selectTab('internal')">Internal
+          <span class="badge" *ngIf="filteredDocumentNames.length > 0 && selectedtab != 'internal' ">{{
+            filteredDocumentNames.length }}</span>
+        </button>
+        <button [class.active]="selectedtab === 'external'" (click)="selectTab('external')">External
+          <span class="badge"
+            *ngIf="selectedtab != 'external' && (filteredJiraFiles.length > 0 || filteredConfluenceFiles.length > 0 || filteredWebsiteList.length > 0)">
+            {{ filteredJiraFiles.length + filteredConfluenceFiles.length + filteredWebsiteList.length }}
+          </span>
+        </button>
+      </div>
+      <div class="delete-download-options"
+        *ngIf="wantTodownloadFiles && !checkIfNoFilesLeft() && selectedtab == 'internal'">
+        <div class="top-delete-button-container">
+          <i class="bi bi-download"></i>
+          <button (click)="downloadSelectedFiles()" style="color: #C4161C;" [disabled]="selectedFiles.length == 0"
+            title="Select resources to download">DOWNLOAD SELECTIONS</button>
+        </div>
+        <div class="top-download-button-container">
+          <button (click)="cancelDownloadDelete()" title="Cancel download">Cancel</button>
+        </div>
+      </div>
+
+      <div class="delete-download-options" *ngIf="wantTodeleteFiles && !checkIfNoFilesLeft()">
+        <div class="top-delete-button-container">
+          <i class="bi bi-trash"></i>
+          <button (click)="showDeletionPopup()" [disabled]="selectedFiles.length == 0" style="color: #C4161C;"
+            title="Select resources to delete">DELETE SELECTIONS</button>
+        </div>
+        <div class="top-download-button-container">
+          <button (click)="cancelDownloadDelete()" title="Cancel delete">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="selectedtab=== 'internal'">
+      <div class="documents-container" *ngIf="filteredDocumentNames.length > 0 && isListFetched">
+        <table class="table table-hover align-middle mb-0 bg-white table-bordered">
+          <thead class="table-thead-custom">
+            <tr>
+              <th (click)="sortBy('fileName')" style="cursor: pointer">
+                File name
+                <i class="bi"
+                  [ngClass]="sortField === 'fileName' && sortDirection === 'asc' ? 'bi-caret-up-fill' : 'bi-caret-down-fill'"></i>
+              </th>
+              <th (click)="sortBy('uploadDate')" style="cursor: pointer" title="in GMT">
+                Uploaded date
+                <i class="bi"
+                  [ngClass]="sortField === 'uploadDate' && sortDirection === 'asc' ? 'bi-caret-up-fill' : 'bi-caret-down-fill'"></i>
+              </th>
+              <th>Tags</th>
+              <th *ngIf="wantTodownloadFiles || wantTodeleteFiles">
+                <input type="checkbox" (change)="toggleSelectAll($event)" [checked]="isAllSelected" />
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let documentName of filteredDocumentNames.slice(startIndex(), endIndex()); let i = index">
+              <td>{{ documentName }}</td>
+              <td title="in GMT">{{ filteredUploadedDate[startIndex() + i] }}</td>
+              <td>Chat, Onboarding</td>
+              <td *ngIf="wantTodownloadFiles || wantTodeleteFiles">
+                <input type="checkbox" class="checkbox" (change)="onFileSelection($event, documentName)"
+                  [checked]="selectedFiles.includes(documentName)" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="delete-download" *ngIf="selectedFiles.length > 0">
+          <p class="deletion-message" *ngIf="deletionMessage && !deletionError">{{ deletionMessage }}</p>
+          <div *ngIf="isDownloading" class="deletion-message">Downloading resources...</div>
+          <div class="selected-count">
+            {{ selectedFiles.length }} document(s) selected
+            <i class="bi bi-x-circle remove-all" (click)="removeAllSelectedFiles()" title="Remove All"></i>
+          </div>
+        </div>
+
+        <div class="actions">
+
+          <div class="pagination" *ngIf="totalPages() > 1">
+            <button (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1">
+              < </button>
+                <span>{{ currentPage }}/{{ totalPages() }}</span>
+                <button (click)="changePage(currentPage + 1)" [disabled]="currentPage >= totalPages()">></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="selectedtab=== 'external'" style="display: flex; align-items: center;">
+      <div class="secondary-tabs">
+        <button [class.active]="selectedSecondaryTab === 'jira'" (click)="selectSecondaryTab('jira')">Jira
+          <span class="badge" *ngIf="filteredJiraFiles.length > 0">{{ filteredJiraFiles.length }}</span>
+        </button>
+        <button [class.active]="selectedSecondaryTab === 'confluence'"
+          (click)="selectSecondaryTab('confluence')">Confluence
+          <span class="badge" *ngIf="filteredConfluenceFiles.length > 0">{{ filteredConfluenceFiles.length }}</span>
+        </button>
+        <button [class.active]="selectedSecondaryTab === 'website'" (click)="selectSecondaryTab('website')">Website
+          <span class="badge" *ngIf="filteredWebsiteList.length > 0">{{ filteredWebsiteList.length }}</span>
+        </button>
+      </div>
+      <div class="extraction_status" *ngIf="websiteExtracting">Extracting & adding resources... <div
+          class="extraction_spinner"></div>
+      </div>
+    </div>
+    <div
+      *ngIf="filteredJiraFiles.length > 0  && isJiraListFetched && (selectedtab=== 'external' && selectedSecondaryTab === 'jira')">
+      <table class="table table-hover align-middle mb-0 bg-white table-bordered">
+        <thead class="table-thead-custom">
+          <tr>
+            <th (click)="sortBy('fileName')" style="cursor: pointer">
+              Board name
+              <i class="bi"
+                [ngClass]="sortField === 'fileName' && sortDirection === 'asc' ? 'bi-caret-up-fill' : 'bi-caret-down-fill'"></i>
+            </th>
+            <th (click)="sortBy('uploadDate')" style="cursor: pointer" title="in GMT">
+              Uploaded date
+              <i class="bi"
+                [ngClass]="sortField === 'uploadDate' && sortDirection === 'asc' ? 'bi-caret-up-fill' : 'bi-caret-down-fill'"></i>
+            </th>
+            <th>Ticket Count</th>
+            <th *ngIf="wantTodownloadFiles || wantTodeleteFiles">
+              <input type="checkbox" (change)="toggleSelectAll($event)" [checked]="isAllSelected" />
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let file of filteredJiraFiles.slice(startIndex(), endIndex());">
+            <td>{{ file.doc_name }}</td>
+            <td title="in GMT">{{ file.creation_date }}</td>
+            <td>{{ file.document_count }}</td>
+            <td *ngIf="wantTodownloadFiles || wantTodeleteFiles">
+              <input type="checkbox" class="checkbox" (change)="onFileSelection($event, file.doc_name)"
+                [checked]="selectedFiles.includes(file.doc_name)" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="delete-download" *ngIf="selectedFiles.length > 0">
+        <p class="deletion-message" *ngIf="deletionMessage && !deletionError">{{ deletionMessage }}</p>
+        <div *ngIf="isDownloading" class="deletion-message">Downloading resources...</div>
+
+        <div class="selected-count">
+          {{ selectedFiles.length }} board(s) selected
+          <i class="bi bi-x-circle remove-all" (click)="removeAllSelectedFiles()" title="Remove All"></i>
+        </div>
+      </div>
+
+      <div class="actions">
+        <div class="pagination" *ngIf="totalPages() > 1">
+          <button (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1">
+            < </button>
+              <span>{{ currentPage }}/{{ totalPages() }}</span>
+              <button (click)="changePage(currentPage + 1)" [disabled]="currentPage >= totalPages()">></button>
+        </div>
+      </div>
+    </div>
+    <div
+      *ngIf="filteredConfluenceFiles.length > 0  && isConfluenceListFetched && (selectedtab=== 'external' && selectedSecondaryTab === 'confluence')">
+      <table class="table table-hover align-middle mb-0 bg-white table-bordered">
+        <thead class="table-thead-custom">
+          <tr>
+            <th (click)="sortBy('fileName')" style="cursor: pointer">
+              Space name
+              <i class="bi"
+                [ngClass]="sortField === 'fileName' && sortDirection === 'asc' ? 'bi-caret-up-fill' : 'bi-caret-down-fill'"></i>
+            </th>
+            <th (click)="sortBy('uploadDate')" style="cursor: pointer" title="in GMT">
+              Uploaded date
+              <i class="bi"
+                [ngClass]="sortField === 'uploadDate' && sortDirection === 'asc' ? 'bi-caret-up-fill' : 'bi-caret-down-fill'"></i>
+            </th>
+            <th>Document Count</th>
+            <th *ngIf="wantTodownloadFiles || wantTodeleteFiles">
+              <input type="checkbox" (change)="toggleSelectAll($event)" [checked]="isAllSelected" />
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let file of filteredConfluenceFiles.slice(startIndex(), endIndex());">
+            <td>{{ file.doc_name }}</td>
+            <td title="in GMT">{{ file.creation_date }}</td>
+            <td>{{ file.document_count }}</td>
+            <td *ngIf="wantTodownloadFiles || wantTodeleteFiles">
+              <input type="checkbox" class="checkbox" (change)="onFileSelection($event, file.doc_name)"
+                [checked]="selectedFiles.includes(file.doc_name)" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="delete-download" *ngIf="selectedFiles.length > 0">
+        <p class="deletion-message" *ngIf="deletionMessage && !deletionError">{{ deletionMessage }}</p>
+        <div *ngIf="isDownloading" class="deletion-message">Downloading resources...</div>
+
+        <div class="selected-count">
+          {{ selectedFiles.length }} space(s) selected
+          <i class="bi bi-x-circle remove-all" (click)="removeAllSelectedFiles()" title="Remove All"></i>
+        </div>
+      </div>
+
+      <div class="actions">
+        <div class="pagination" *ngIf="totalPages() > 1">
+          <button (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1">
+            < </button>
+              <span>{{ currentPage }}/{{ totalPages() }}</span>
+              <button (click)="changePage(currentPage + 1)" [disabled]="currentPage >= totalPages()">></button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      *ngIf="filteredWebsiteList.length > 0  && isWebsiteListFetched && (selectedtab=== 'external' && selectedSecondaryTab === 'website')">
+      <table class="table table-hover align-middle mb-0 bg-white table-bordered">
+        <thead class="table-thead-custom">
+          <tr>
+            <th (click)="sortBy('fileName')" style="cursor: pointer">
+              Website name
+              <i class="bi"
+                [ngClass]="sortField === 'fileName' && sortDirection === 'asc' ? 'bi-caret-up-fill' : 'bi-caret-down-fill'"></i>
+            </th>
+            <th (click)="sortBy('uploadDate')" style="cursor: pointer" title="in GMT">
+              Uploaded date
+              <i class="bi"
+                [ngClass]="sortField === 'uploadDate' && sortDirection === 'asc' ? 'bi-caret-up-fill' : 'bi-caret-down-fill'"></i>
+            </th>
+            <th *ngIf="wantTodownloadFiles || wantTodeleteFiles">
+              <input type="checkbox" (change)="toggleSelectAll($event)" [checked]="isAllSelected" />
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let file of filteredWebsiteList.slice(startIndex(), endIndex());">
+            <td>{{ file.doc_name }}</td>
+            <td title="in GMT">{{ file.creation_date }}</td>
+            <td *ngIf="wantTodownloadFiles || wantTodeleteFiles">
+              <input type="checkbox" class="checkbox" (change)="onFileSelection($event, file.doc_name)"
+                [checked]="selectedFiles.includes(file.doc_name)" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="delete-download" *ngIf="selectedFiles.length > 0">
+        <p class="deletion-message" *ngIf="deletionMessage && !deletionError">{{ deletionMessage }}</p>
+        <div *ngIf="isDownloading" class="deletion-message">Downloading resources...</div>
+
+        <div class="selected-count">
+          {{ selectedFiles.length }} website(s) selected
+          <i class="bi bi-x-circle remove-all" (click)="removeAllSelectedFiles()" title="Remove All"></i>
+        </div>
+      </div>
+
+      <div class="actions">
+        <div class="pagination" *ngIf="totalPages() > 1">
+          <button (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1">
+            < </button>
+              <span>{{ currentPage }}/{{ totalPages() }}</span>
+              <button (click)="changePage(currentPage + 1)" [disabled]="currentPage >= totalPages()">></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Message when no internal documents are available -->
+    <div *ngIf="filteredDocumentNames.length === 0 && isListFetched && selectedtab=== 'internal' "
+      class="no-documents-message">
+      <i class="bi bi-exclamation-triangle" style="font-size: 24px; color: #C4161C;"></i>
+      <p>No documents available for the selected BU and product.</p>
+      <p>Upload new documents to use them in the GenAI Assistant.</p>
+    </div>
+
+
+    <!-- Message when no external JIRA documents are available -->
+    <div
+      *ngIf="filteredJiraFiles.length === 0 && isJiraListFetched && selectedtab=== 'external' && selectedSecondaryTab === 'jira' "
+      class="no-documents-message">
+      <i class="bi bi-exclamation-triangle" style="font-size: 24px; color: #C4161C;"></i>
+      <p>No Jira Boards available for the selected product.</p>
+      <p>Add new boards to use them in the GenAI Assistant.</p>
+    </div>
+
+    <!-- Message when no external CONFLUENCE documents are available -->
+    <div
+      *ngIf="filteredConfluenceFiles.length === 0 && isConfluenceListFetched && selectedtab=== 'external' && selectedSecondaryTab === 'confluence' "
+      class="no-documents-message">
+      <i class="bi bi-exclamation-triangle" style="font-size: 24px; color: #C4161C;"></i>
+      <p>No Confluence Spaces available for the selected product.</p>
+      <p>Add new spaces to use them in the GenAI Assistant.</p>
+    </div>
+
+    <!-- Message when no external website files are available -->
+    <div
+      *ngIf="filteredWebsiteList.length === 0 && isWebsiteListFetched && selectedtab=== 'external' && selectedSecondaryTab === 'website' "
+      class="no-documents-message">
+      <i class="bi bi-exclamation-triangle" style="font-size: 24px; color: #C4161C;"></i>
+      <p>No Websites available for the selected product.</p>
+      <p>Add new websites to use them in the GenAI Assistant.</p>
+    </div>
+  </div>
+
+  <!-- DELETE Confirmation Popup -->
+  <div class="confirmation-popup" *ngIf="showDeletionConfirmation && !deletionError">
+    <p class="text1"><i class="bi bi-trash"></i>Are you sure you want to delete the selected resource(s)?</p>
+    <p class="text2">It will be permanently deleted and won't be available for the GenAI Assistant</p>
+    <div class="btn-container">
+      <div *ngIf="isDeleting" class="spinner"></div>
+      <div *ngIf="isDeleting" class="deleting-message">Deleting resources...</div>
+      <button class="cancel" (click)="showDeletionConfirmation = false">CANCEL</button>
+      <button *ngIf="selectedtab=== 'internal'" class="delete" (click)="deleteSelectedFiles()">DELETE</button>
+      <button *ngIf="selectedtab=== 'external'" class="delete" (click)="deleteSelectedExternalFiles()">DELETE</button>
+    </div>
+  </div>
+
+  <!-- DELETE ERROR POPUP -->
+  <div class="confirmation-popup" *ngIf="showDeletionConfirmation && deletionError">
+    <p class="text1-error">Delete Failed</p>
+    <p class="text2">{{errorMessage}}</p>
+    <div class="btn-container">
+      <button class="cancel" (click)="showDeletionConfirmation = false">OK</button>
+    </div>
+  </div>
+
+  <app-upload [isDocumentsComponent]="true" *ngIf="showPopup" (close)="closePopup()"></app-upload>
+  <app-upload-external-dependencies [isDocumentsComponent]="true" *ngIf="showExternalDepedencyPopup"
+    (close)="closePopup()"></app-upload-external-dependencies>
+</div>

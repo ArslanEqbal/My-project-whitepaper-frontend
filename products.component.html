@@ -1,0 +1,78 @@
+<div class="product">
+  <div class="topnav">
+    <div class="content">
+      <i class="bi bi-arrow-left" (click)="navigateToBU()"></i>
+      <p>Admin Dashboard</p>
+    </div>
+  </div>
+  <div class="main-content">
+    <div class="headings">
+      <div class="title">
+        <p class="breadcrumbs"><span class="breadcrumbs" (click)="navigateToBU()">Business units</span> > {{BuName}}</p>
+        <p class="heading">{{BuName}}</p>
+        <p class="sub-heading">Following is the list of products in {{BuName}} </p>
+      </div>
+      <div class="search-input-container">
+        <div *ngIf="loading" class="spinner"></div>
+        <i class="bi bi-search search-icon"></i>
+        <input type="text" placeholder="Search..." (input)="onSearch($event)" class="search-input" />
+      </div>
+    </div>
+    <div class="product-container" *ngIf="filteredProductValues.length > 0 && isProductListFetched">
+      <table class="table table-hover align-middle mb-0 bg-white table-bordered">
+        <thead class="table-thead-custom">
+          <tr>
+            <th>Products</th>
+            <th>Resource Count</th>
+            <th>Last Material Generation Date</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let productName of paginatedProductValues(); let i = index"
+            (click)="productName ? navigateToDocuments(productName) : null">
+            <td>
+              <button *ngIf="productName" type="button" class="btn btn-sm btn-rounded">
+                {{productName}}
+              </button>
+            </td>
+            <td>{{ productName ? (numberOfDocs[productName] || 0) : '' }}</td>
+            <td >{{ productName ? lastReportGenerated[productName] : '' }}</td>
+            <td>
+              
+              <button *ngIf="productName" type="button" class="btn btn-sm btn-rounded reportbtn"
+                [disabled]="lastReportGenerated[productName] == 'NA'" (click)="downloadReport($event, productName)">
+
+                <span class="icon-container">
+                  <!-- Conditionally show the tick or the copy icon -->
+                  <i *ngIf="downloadingDocument === productName" class="bi bi-check check-icon" title="Downloaded!"></i>
+                  <i class="bi bi-download" title="Download"></i>
+              </span>
+                Download Material
+              </button>
+            </td>
+            
+          </tr>
+
+        </tbody>
+      </table>
+      <div class="actions" *ngIf="totalPages() > 1">
+        <div class="pagination">
+          <button (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1">
+            < </button>
+              <span>{{ currentPage }}/{{ totalPages() }}</span>
+              <button (click)="changePage(currentPage + 1)" [disabled]="currentPage >= totalPages()">></button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Message when no internal documents are available -->
+    <div *ngIf="filteredProductValues.length == 0 && isProductListFetched" class="no-documents-message">
+      <i class="bi bi-exclamation-triangle" style="font-size: 24px; color: #C4161C;"></i>
+      <p>No matching products found.</p>
+    </div>
+
+
+  </div>
+</div>

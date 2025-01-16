@@ -1,0 +1,246 @@
+<div class="product">
+    <div class="topnav">
+        <div class="content">
+            <i class="bi bi-house-door" (click)="navigateToHome()"></i>
+            <span>Usage Statistics</span>
+            <div class="kpi-glossary" (click)="navigateToGlossary()">VIEW KPI GLOSSARY</div>
+        </div>
+    </div>
+    <div class="main-content">
+        <div class="title">
+            <p class="heading">Analysis</p>
+            <p class="sub-heading">Select the following parameters for analysis</p>
+        </div>
+        <div class="user-home">
+            <div class="bu-product-selection">
+                <div class="dropdown">
+                    <label class="dropdown-label">Analysis type</label>
+                    <select [(ngModel)]="selectedAnalysisType" (change)="onFieldChange()">
+                        <option value="" disabled>Select an option</option>
+                        <option value="Q&A Chatbot">Q&A Chatbot</option>
+                        <option value="Onboarding Material">Onboarding Material</option>
+                    </select>
+                </div>
+
+                <div class="dropdown">
+                    <label class="dropdown-label">Time Period</label>
+                    <select [(ngModel)]="selectedTimePeriod" (change)="onFieldChange()">
+                        <option value="" disabled>Select an option</option>
+                        <option value="Last 1 week">Last 1 week</option>
+                        <option value="Last 1 month">Last 1 month</option>
+                        <option value="Last 1 year">Last 1 year</option>
+                        <option value="All Time">All Time</option>
+                    </select>
+                </div>
+
+                <div class="dropdown">
+                    <label class="dropdown-label">Business Unit</label>
+                    <select [(ngModel)]="selectedBU" (change)="onBUChange($event)" [disabled]="isAdmin">
+                        <option value="" disabled>BU</option>
+                        <option *ngFor="let bu of buList" [value]="bu">{{ bu }}</option>
+                    </select>
+                </div>
+                <div class="dropdown">
+                    <label class="dropdown-label">Product</label>
+                    <select [(ngModel)]="selectedProduct" (change)="onProductChange($event)">
+                        <option value="All Products">All Products</option>
+                        <option *ngFor="let product of products" [value]="product">{{ product }}</option>
+                    </select>
+                </div>
+            </div>
+            <div class="actions">
+                <button (click)="getUsageBoxData()"
+                    [disabled]="!selectedBU || !selectedProduct || !selectedAnalysisType || !selectedTimePeriod"
+                    [attr.title]="getAnalyseButtonTooltip()">ANALYSE</button>
+                <div *ngIf="loading" class="spinner"></div>
+            </div>
+        </div>
+
+        <div class="disclaimer">
+            <span *ngIf="isAnalyzeButtonClicked  && !resultsLoading" class="results-disclaimer">* based on data till
+                yesterday</span>
+        </div>
+
+        <div class="product-container">
+
+            <!-- When DROPDOWNS ARE NOT SELECTED - before clicking analyse button-->
+            <div *ngIf="noSelection && (!isAnalyzeButtonClicked || resultsLoading)" class="no-documents-message">
+                <img src="select-filters.png">
+                <p>Select the above options and click on Analyse to generate statistics</p>
+            </div>
+
+            <!-- Message when no evaluations are available AND DROPDOWNS ARE SELECTED-->
+            <div *ngIf="!noSelection && !someDataIsPresent" class="no-documents-message">
+                <i class="bi bi-exclamation-triangle" style="font-size: 24px; color: #C4161C;"></i>
+                <p>No usage data available for the selected product and usecase in the given time period.</p>
+            </div>
+
+            <!-- Main result-->
+            <div *ngIf="!resultsLoading && (someDataIsPresent)" class="analysis-result">
+                <div class="header">
+                    <p class="results-heading">RESULTS</p>
+                    <button class="export-btn" (click)="exportResults()"
+                        [disabled]="exportButtonDisabled">Export</button>
+                </div>
+                <!-- Add a message to display when there's no data to export -->
+                <div *ngIf="noDataMessage" class="no-data-message">
+                    <p>{{ noDataMessage }}</p>
+                </div>
+                <!-- ONBOARDING -->
+                <div class="usage-box-row" *ngIf="selectedAnalysisType === 'Onboarding Material'">
+                    <div class="usage-box">
+                        <p class="usage-number">{{activeUsers}}</p>
+                        <p class="usage-label">Total Active Users</p>
+                    </div>
+                    <div class="usage-box">
+                        <p class="usage-number">{{engagementRatePercentage}}%</p>
+                        <p class="usage-label">User Engagement Rate</p>
+                    </div>
+                    <div class="usage-box">
+                        <p class="usage-number">{{reportsAvailable}}</p>
+                        <p class="usage-label">Reports Available</p>
+                    </div>
+                    <div class="usage-box">
+                        <p class="usage-number">{{totalDownloads}}</p>
+                        <p class="usage-label">Total Downloads</p>
+                    </div>
+                    <div class="usage-box">
+                        <p class="usage-number">{{reportsGenerated }}</p>
+                        <p class="usage-label">Reports Generated</p>
+                    </div>
+                </div>
+
+                <!-- CHATBOT -->
+                <div class="usage-box-row" *ngIf="selectedAnalysisType === 'Q&A Chatbot'">
+                    <div class="usage-box">
+                        <p class="usage-number">{{activeUsers}}</p>
+                        <p class="usage-label">Total Active Users</p>
+                    </div>
+                    <div class="usage-box">
+                        <p class="usage-number">{{engagementRatePercentage}}%</p>
+                        <p class="usage-label">User Engagement Rate</p>
+                    </div>
+                    <div class="usage-box">
+                        <p class="usage-number">{{averageQueryPerUser}}</p>
+                        <p class="usage-label">Average Queries per user​</p>
+                    </div>
+                    <div class="usage-box-last">
+                        <p class="usage-number">{{upvotesPercentage}}% <span class="vote-sublabel">Upvotes
+                                ({{upvotesCount}})</span><span class="separator">|</span> {{downvotesPercentage}}% <span
+                                class="vote-sublabel">Downvotes ({{downvotesCount}})</span></p>
+                        <p class="usage-label">Feedback Score <span class="sub-label">(based on no of responses
+                                receiving feedback)</span></p>
+                    </div>
+                </div>
+
+                <!-- Onboarding Material -->
+                <div class="charts-container" *ngIf="selectedAnalysisType === 'Onboarding Material'">
+                    <!-- LEFT ALL PRODUCTS  -->
+                    <div class="left-plot" *ngIf="selectedProduct == 'All Products'">
+                        <p class="chart-label">Product-level Download Trend</p>
+                        <div class="chart-box" *ngIf="leftPlotAvailable">
+                            <plotly-plot class="plot" [config]="{ responsive: true }"
+                                [layout]="products_report_download.layout"
+                                [data]="products_report_download.data"></plotly-plot>
+                        </div>
+                        <div class="chart-box-img" *ngIf="!leftPlotAvailable">
+                            <img src="no-chart-message.png">
+                        </div>
+                    </div>
+
+                    <!-- LEFT ONE PRODUCT  -->
+                    <div class="left-plot" *ngIf="selectedProduct != 'All Products'">
+                        <p class="chart-label">Product's Download Trend</p>
+                        <div class="chart-box" *ngIf="leftPlotAvailable">
+                            <plotly-plot class="plot" [config]="{ responsive: true }"
+                                [layout]="product_report_download.layout"
+                                [data]="product_report_download.data"></plotly-plot>
+                        </div>
+                        <div class="chart-box-img" *ngIf="!leftPlotAvailable">
+                            <img src="no-chart-message.png">
+                        </div>
+                    </div>
+
+                    <!-- RIGHT ALL PRODUCTS  -->
+                    <div class="right-plot" *ngIf="selectedProduct == 'All Products'">
+                        <p class="chart-label">Product-level Engagement Trend</p>
+                        <div class="chart-box" *ngIf="rightPlotAvailable">
+                            <plotly-plot class="plot" [config]="{ responsive: true }"
+                                [layout]="om_engagement_rate_weekly_trend.layout"
+                                [data]="om_engagement_rate_weekly_trend.data"></plotly-plot>
+                        </div>
+                        <div class="chart-box-img" *ngIf="!rightPlotAvailable">
+                            <img src="no-chart-message.png">
+                        </div>
+                    </div>
+
+                    <!-- RIGHT ONE PRODUCT  -->
+                    <div class="right-plot" *ngIf="selectedProduct != 'All Products'">
+                        <p class="chart-label">Top Five Reports</p>
+                        <div class="chart-box" *ngIf="rightPlotAvailable">
+                            <plotly-plot class="plot" [config]="{ responsive: true }" [layout]="top_five_reports.layout"
+                                [data]="top_five_reports.data"></plotly-plot>
+                        </div>
+                        <div class="chart-box-img" *ngIf="!rightPlotAvailable">
+                            <img src="no-chart-message.png">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHARTS Q&A -->
+                <div class="charts-container" *ngIf="selectedAnalysisType === 'Q&A Chatbot'">
+
+                    <!-- LEFT ALL PRODUCTS  -->
+                    <div class="left-plot" *ngIf="selectedProduct == 'All Products'">
+                        <p class="chart-label">Product-level Query Count</p>
+                        <div class="chart-box" *ngIf="leftPlotAvailable">
+                            <plotly-plot class="plot" [config]="{ responsive: true }"
+                                [layout]="products_query_no.layout" [data]="products_query_no.data"></plotly-plot>
+                        </div>
+                        <div class="chart-box-img" *ngIf="!leftPlotAvailable">
+                            <img src="no-chart-message.png">
+                        </div>
+                    </div>
+
+                    <!-- LEFT ONE PRODUCT  -->
+                    <div class="left-plot" *ngIf="selectedProduct != 'All Products'">
+                        <p class="chart-label">Product's Query Count</p>
+                        <div class="chart-box" *ngIf="leftPlotAvailable">
+                            <plotly-plot class="plot" [config]="{ responsive: true }" [layout]="product_query_no.layout"
+                                [data]="product_query_no.data"></plotly-plot>
+                        </div>
+                        <div class="chart-box-img" *ngIf="!leftPlotAvailable">
+                            <img src="no-chart-message.png">
+                        </div>
+                    </div>
+
+                    <!-- RIGHT ALL PRODUCTS  -->
+                    <div class="right-plot" *ngIf="selectedProduct == 'All Products'">
+                        <p class="chart-label">Product-level Engagement Trend</p>
+                        <div class="chart-box" *ngIf="rightPlotAvailable">
+                            <plotly-plot class="plot" [config]="{ responsive: true }"
+                                [layout]="qna_engagement_rate_weekly_trend.layout"
+                                [data]="qna_engagement_rate_weekly_trend.data"></plotly-plot>
+                        </div>
+                        <div class="chart-box-img" *ngIf="!rightPlotAvailable">
+                            <img src="no-chart-message.png">
+                        </div>
+                    </div>
+
+                    <!-- RIGHT ONE PRODUCT  -->
+                    <div class="right-plot" *ngIf="selectedProduct != 'All Products'">
+                        <p class="chart-label">Product's Feedback Trend</p>
+                        <div class="chart-box" *ngIf="rightPlotAvailable">
+                            <plotly-plot class="plot" [config]="{ responsive: true }"
+                                [layout]="feedback_weekly_trend.layout"
+                                [data]="feedback_weekly_trend.data"></plotly-plot>
+                        </div>
+                        <div class="chart-box-img" *ngIf="!rightPlotAvailable">
+                            <img src="no-chart-message.png">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

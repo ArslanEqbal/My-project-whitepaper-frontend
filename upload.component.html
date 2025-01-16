@@ -1,0 +1,91 @@
+<div class="overlay">
+    <div class="popup-content" #scrollContainer>
+        <div class="upload-label" *ngIf="!uploadCompleted && !errorMessage">
+            <p>Upload Files</p>
+            <button (click)="closePopup()">x</button>
+        </div>
+
+        <!-- Show content only if upload hasn't completed -->
+        <div *ngIf="!uploadCompleted && !errorMessage">
+            <div class="bu-product-selection" *ngIf="!isDocumentsComponent">
+                <select [(ngModel)]="selectedBU" (change)="onBUChange($event)">
+                    <option value="" disabled>BU</option>
+                    <option *ngFor="let bu of buList" [value]="bu">{{ bu }}</option>
+                </select>
+                <select [(ngModel)]="selectedProduct" (change)="onProductChange($event)">
+                    <option value="" disabled>Product</option>
+                    <option *ngFor="let product of products" [value]="product">{{ product }}</option>
+                </select>
+            </div>
+
+            <div class="upload-container" *ngIf="selectedFiles.length == 0">
+                <button (click)="triggerFileInput()" class="fileUploadBtn"
+                    [disabled]="!isDocumentsComponent && (!selectedBU || !selectedProduct)">
+                    <div>
+                        <i class="bi bi-inbox"></i>
+                        <p class="text1">Click to upload</p>
+                        <p class="text2">Multiple documents of type .pdf, .docx, .pptx, .md, .txt, and .html can be
+                            uploaded</p>
+                        <p class="text2" style="font-style: italic;">Tip: PDF formats process faster than other document
+                            types</p>
+                    </div>
+                    <input type="file" #fileInput (change)="handleFileInput($event)"
+                        accept=".pdf, .pptx, .docx, .md, .txt, .html" multiple style="display: none" />
+                </button>
+            </div>
+
+            <div *ngIf="selectedFiles.length > 0" class="file-list-container">
+                <div style="display: flex;justify-content: space-between;align-items: center;margin-bottom: 15px;">
+                    <div style="font-weight: bold;"> List of Documents ({{selectedFiles.length}}): </div>
+                    <button (click)="triggerFileInput()" class="upload-more-btn"><i class="bi bi-plus"></i>Add
+                        Docs</button>
+                </div>
+                <input type="file" #fileInput (change)="handleFileInput($event)"
+                    accept=".pdf, .pptx, .docx, .md, .txt, .html" multiple style="display: none" />
+                <div *ngFor="let file of selectedFiles" class="file-list">
+                    <p>
+                        <i class="bi bi-paperclip"></i>{{ file.name }}
+                    </p>
+                    <button (click)="removeFile(file)" class="delete-file-btn">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+
+            </div>
+            <div *ngIf="size_error" class="size_error">
+                <p class="errortext">{{ size_error }}</p>
+            </div>
+
+            <div class="pii" *ngIf="selectedFiles.length > 0">
+                <label class="pii_heading">GDPR Compliance Reminder</label>
+                <div class="compliance">
+                    <input type="checkbox" [(ngModel)]="pii_confirm" (change)="onPIIChange($event)">
+                    <label>I confirm that the uploaded resources do not contain any Personally Identifiable
+                        Information (PII) as per EU GDPR regulations
+                        and the files comply with these guidelines.
+                        <span style="font-style: italic;">If unsure, review the content or consult your Data
+                            Protection Officer.</span></label>
+                </div>
+            </div>
+
+            <div class="proceed-div" *ngIf="selectedFiles.length > 0 && pii_confirm">
+                <div *ngIf="isUploading" class="spinner"></div>
+                <div *ngIf="isUploading" class="uploading-message">Uploading documents...</div>
+                <button class="proceed-uploading" (click)="uploadDocuments()" [disabled]="size_error">PROCEED</button>
+            </div>
+        </div>
+
+        <!-- Success Message -->
+        <div *ngIf="uploadCompleted" class="upload-message">
+            <p class="successtext1"><i class="bi bi-check-circle-fill text-success"
+                    style="height: 24px; width: 24px;"></i> Upload completed. The documents will now be processed.</p>
+            <p class="successtext2">{{uploadMessage}}</p>
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="errorMessage" class="upload-message">
+            <p class="errortext1">Upload Failed!</p>
+            <p class="errortext2">{{errorMessage}}</p>
+        </div>
+    </div>
+</div>

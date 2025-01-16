@@ -1,0 +1,256 @@
+<div class="bu">
+    <div class="topnav">
+        <div class="content">
+            <i class="bi bi-house-door" (click)="navigateToHome()"></i>
+            <p>AI Chatbot</p>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Sidebar -->
+        <div class="col-md-2 sidebar">
+            <button class="new-chat-btn" (click)="newConversation()">NEW CHAT</button>
+            <div class="history-container">
+                <label class="history_label" *ngIf="groupedChatData.length !== 0"><strong> HISTORY </strong></label>
+                <div class="display-questions">
+                    <div *ngFor="let group of groupedChatData; let i = index"
+                        [class.selected]="i === selectedConversationIndex" class="history">
+                        <div class="conversation-question-wrapper" (click)="selectDayConversation(i)">
+                            <span
+                                class="conversation-question-text">{{truncateQuestion(group.conversations[0].question)}}</span>
+                            <!-- Delete button -->
+                            <button class="delete-btn" (click)="showDeletionPopup($event, i)"
+                                title="Delete Conversation">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DELETE Confirmation Popup -->
+        <div class="confirmation-popup" *ngIf="showDeletionConfirmation && !deletionError">
+            <p class="text1"><i class="bi bi-trash"></i>Are you sure you want to delete the selected conversation?</p>
+            <p class="text2">It will be permanently deleted and won't be available anymore.</p>
+            <div class="btn-container">
+                <div *ngIf="isDeleting" class="deleting-message">Deleting conversation...</div>
+                <button class="cancel" (click)="showDeletionConfirmation = false">CANCEL</button>
+                <button class="delete" (click)="deleteConversation()">DELETE</button>
+            </div>
+        </div>
+
+        <!-- DELETE ERROR POPUP -->
+        <div class="confirmation-popup" *ngIf="showDeletionConfirmation && deletionError">
+            <p class="text1-error">Delete Failed</p>
+            <p class="text2">{{errorMessage}}</p>
+            <div class="btn-container">
+                <button class="cancel" (click)="showDeletionConfirmation = false">OK</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9 main-content">
+            <div class="business-row">
+                <div class="content">
+                    <p class="heading">BUSINESS UNIT: <span><strong>{{BuName}}</strong></span> | PRODUCT:
+                        <span><strong>{{productName}}</strong></span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="message-container" *ngIf="chatMessages.length === 0 && isLoading">
+                <div class="no-documents-message">
+                    <p class="chat-heading">Checking Resources for {{productName}}
+                        <span class="loading">
+                            <span style="width: 5px;height: 5px;"></span>
+                            <span style="width: 5px;height: 5px;"></span>
+                            <span style="width: 5px;height: 5px;"></span>
+                        </span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="message-container" *ngIf="chatMessages.length === 0 && !(isResourceProcessed)">
+                <!-- Conditionally show notification if files are still being processed -->
+                <div class="no-documents-message" *ngIf="isResourceAvailable">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 24px; color: #E8A757;"></i>
+                    <p class="chat-heading">Resources for {{productName}} are still being processed.
+                    </p>
+                    <p class="chat-subheading">Please check the resources from the Admin Dashboard before using the
+                        chatbot.</p>
+                </div>
+                <div class="no-documents-message" *ngIf="!isResourceAvailable">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 24px; color: #E8A757;"></i>
+                    <p class="chat-heading">Resources for {{productName}} are not present.
+                    </p>
+                    <p class="chat-subheading">Please check the resources from the Admin Dashboard before using the
+                        chatbot.</p>
+                </div>
+            </div>
+
+
+
+            <!-- Show this only when chatMessages are empty -->
+            <div class="chat-box" *ngIf="chatMessages.length === 0 && (isResourceProcessed && isResourceAvailable) ">
+                <p class="chat-heading">Choose or type in your question</p>
+                <p class="chat-subheading">Select to begin the chat</p>
+
+                <!-- Chat Options -->
+                <div class="chat-options"  >
+                    <button class="option" *ngFor="let option of chatOptions" (click)="sendButtonMessage(option)">
+                        {{ option }}
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Chat container should always be visible once there are chat messages -->
+            <div class="chat-container" [class.minimised]="chatMessages.length === 0 || !isResourceAvailable">
+                <div class="scrollable-content" *ngIf="chatMessages.length > 0" #scrollContainer>
+                    <div *ngFor="let message of chatMessages; let i = index">
+                        <!-- User message -->
+                        <div class="user-message" [attr.id]="'question-' + message.id" *ngIf="message.question">
+                            <img src="user.png" class="user-image" />
+                            <span class="question" [innerHTML]="message.question"></span>
+                        </div>
+                        <!-- AI message -->
+                        <div class="ai-message" [attr.id]="'answer-' + message.id" *ngIf="message.content">
+                            <img src="ai.png" class="ai-image" />
+                            <div class="answer"  #answerContainer>
+                                <!-- AI response -->
+                                <ng-container *ngIf="message.content.response.includes('<table>')">
+                                    <div [innerHTML]="renderTable(message.content.response)"></div>
+                                </ng-container>
+                                <ng-container *ngIf="!message.content.response.includes('<table>')">
+                                    <span [innerHTML]="message.content.response"></span>
+                                </ng-container>
+
+                                <div *ngIf="message.content.image_links.length > 0" class="image-collapsible-container">
+                                    <button class="btn btn-link" type="button" data-bs-toggle="collapse"
+                                        [attr.data-bs-target]="'#imageCollapse' + message.id"
+                                        [attr.aria-controls]="'imageCollapse' + message.id" aria-expanded="false">
+                                        Relevant Images
+                                        <i class="bi bi-caret-down-fill"></i>
+                                    </button>
+                                    <div id="imageCollapse{{message.id}}" class="collapse">
+                                        <div class="image-grid">
+                                            <img *ngFor="let image of message.content.image_links" [src]="image"
+                                                alt="Image" class="image-link" (click)="openModal(image)">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Custom Modal for Image Popup -->
+                                <div #imageModal *ngIf="isModalOpen" class="modal">
+                                    <span class="close" (click)="closeModal()">&times;</span>
+                                    <div class="modal-image-wrapper">
+                                        <img #modalImage [src]="modalImageUrl" class="modal-content"
+                                            alt="Expanded Image">
+                                    </div>
+                                </div>
+
+
+                                <div class="resources-container" *ngIf="message.content.reference.length > 0">
+                                    <button class="btn btn-link" type="button" data-bs-toggle="collapse"
+                                        [attr.aria-controls]="'resourcesCollapse' + message.id"
+                                        [attr.data-bs-target]="'#resourcesCollapse' + message.id" aria-expanded="false">
+
+                                        <!-- <button class="btn btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#resourcesCollapse{{message.id}}" aria-expanded="false" aria-controls="resourcesCollapse{{message.id}}"> -->
+                                        Resources
+                                        <i class="bi bi-caret-down-fill"></i>
+                                    </button>
+                                    <div id="resourcesCollapse{{message.id}}" class="collapse">
+                                        <ul>
+                                            <li *ngFor="let reference of message.content.reference; let i = index">
+                                                <a [href]="reference" target="_blank" rel="noreferrer">{{
+                                                    message.content.filename[i] }}</a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <!-- Feedback related -->
+                                <div class="icons-links">
+                                    <a (click)="thumbsUpClicked(i, 'Helpful')">
+                                        <i class="bi bi-hand-thumbs-up-fill icons"
+                                            [ngStyle]="{ color: isThumbsUpClicked(message.id) ? '#007CB0' : ''}"
+                                            title="Helpful response"></i>
+                                    </a>
+                                    <a (click)="thumbsDownClicked(i, 'Not Helpful')">
+                                        <i class="bi bi-hand-thumbs-down-fill icons"
+                                            [ngStyle]="{ color: isThumbsDownClicked(message.id) ? '#007CB0' : ''}"
+                                            title="Not Helpful response"></i>
+                                    </a>
+                                    <span class="icon-container">
+                                        <!-- Conditionally show the tick or the copy icon -->
+                                        <i *ngIf="isCopied" class="bi bi-check check-icon" title="Copied!"></i>
+                                        <i class="bi bi-copy" (click)="copyResponse(i)" title="Copy response"></i>
+                                    </span>
+
+                                    <i *ngIf="i === chatMessages.length - 1" class="bi bi-arrow-clockwise"
+                                        (click)="regenerateResponse(i)" title="Regenerate response"></i>
+                                    <a *ngIf="isThumbsUpClicked(message.id)" class="tell-more"
+                                        (click)="feedbackPopup(message.id, 'Helpful')">Tell us more</a>
+                                    <a *ngIf="isThumbsDownClicked(message.id)" class="tell-more"
+                                        (click)="feedbackPopup(message.id, 'Not Helpful')">Tell us more</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Follow-up questions -->
+                        <div *ngIf="follow_up_ques">
+                            <div *ngFor="let follow_ques of message.content.followup_questions;"
+                                class="follow_questions_container">
+                                <button class="followup_questions" (click)="sendButtonMessage(follow_ques)">{{
+                                    follow_ques }}</button>
+                            </div>
+                        </div>
+
+                        <!-- Loading message -->
+                        <div *ngIf="message.loading" class="ai-message">
+                            <img src="ai.png" class="ai-image" />
+                            <span class="answer">
+                                <div class="loading">
+                                    <span></span><span></span><span></span>
+                                </div>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input field should always be visible -->
+                <div class="bottom-bar">
+                    <div class="input-group">
+                        <div class="container" style="background: #ffffff;">
+                            <textarea class="input_field" placeholder="Type your question here..."
+                                [(ngModel)]="newMessage" (input)="checkInput()" (keydown.enter)="sendMessage()"
+                                [disabled]="loading"></textarea>
+                            <div class="icons-container">
+                                <button class="send-button" (click)="sendMessage()">
+                                    <i class="bi bi-send"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="disclaimer-container">
+                            <div class="disclaimer">This information is AI generated, please verify important details
+                                <button (click)="toggleInfoPopup()" class="info-icon">Learn more <i
+                                        class="bi bi-info-circle"></i></button>
+
+                                <!-- Tooltip popup content -->
+                                <div *ngIf="isInfoPopupVisible" class="info-popup">
+                                    <p style="color: #C4161C;">GDPR Compliance Reminder</p>
+                                    <p style="font-size: 12px;text-align: justify;">Please do not share any Personally
+                                        Identifiable Information (PII) while interacting with the chatbot. All responses
+                                        are generated using AI models and do not involve the use of personal data. If
+                                        you have questions or concerns, consider consulting a Data Protection Officer.
+                                        Protecting your privacy is of utmost importance to us!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

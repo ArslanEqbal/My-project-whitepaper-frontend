@@ -1,0 +1,63 @@
+<div class="home">
+    <div class="bg_images" *ngIf="!isUser">
+        <img src="home_bg.png" alt="liner-image" />
+        <img src="home_bg1.png" alt="liner-image" class="bg1" />
+    </div>
+
+    <div class="main-content">
+
+        <!-- For user roles -->
+        <h2 class="heading" *ngIf="isUser">Choose an option to continue</h2>
+
+        <div class="head" *ngIf="!isUser">
+            <div class="vertical-line"></div>
+            <p style="font-weight: bold;">Admin</p>
+        </div>
+        <div class="lower-row" *ngIf="!isUser">
+            <img src="home_dashboard.png" alt="Admin Dashboard" class="option-image" (click)="goToDashboard()">
+            <img src="usage_analytics.png" alt="Usage Analytics" class="option-image" (click)="goToAnalytics()">
+        </div>       
+        <div class="lower-row" *ngIf="!isUser">
+            <img src="home_evaluation.png" alt="Evaluation Framework" class="option-image" (click)="goToEvaluation()">
+        </div>
+
+        <!-- <div class="divider-bar" *ngIf="!isUser"></div> -->
+
+        <!-- For admin role -->
+        <div class="head" style="font-weight: bold; margin-top: 50px;" *ngIf="!isUser">
+            <div class="vertical-line"></div>
+            <p >Functions</p>
+        </div>
+        <div class="user-home" *ngIf="!isUser">
+            <div class="bu-product-selection">
+                <select [(ngModel)]="selectedBU" (change)="onBUChange($event)" [disabled]="isAdmin">
+                    <option value="" disabled>BU</option>
+                    <option *ngFor="let bu of buList" [value]="bu">{{ bu }}</option>
+                </select>
+                <select [(ngModel)]="selectedProduct" (change)="onProductChange($event)">
+                    <option value="" disabled>Product</option>
+                    <option *ngFor="let product of products" [value]="product">{{ product }}</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="lower-row-user" *ngIf="isUser">
+            <img src="home_chatbot.png" alt="AI Chatbot" class="option-image"
+                [class.disabled]="(!isUser && !selectedBU || !selectedProduct)"
+                (click)="selectedBU && selectedProduct ? goToChatbot() : null">
+            <img src="home_onboarding.png" alt="Onboarding Material" class="option-image"
+                [class.disabled]="(!isUser && !selectedBU || !selectedProduct)"
+                (click)="selectedBU && selectedProduct ? goToOnboarding() : null">
+        </div>
+
+        <div class="lower-row" *ngIf="!isUser">
+            <img src="admin_home_chatbot.png" alt="AI Chatbot" class="option-image"
+                [class.disabled]="(!isUser && !selectedBU || !selectedProduct)"
+                (click)="selectedBU && selectedProduct ? goToChatbot() : null">
+            <img src="admin_home_onboarding.png" alt="Onboarding Material" class="option-image"
+                [class.disabled]="(!isUser && !selectedBU || !selectedProduct)"
+                (click)="selectedBU && selectedProduct ? goToOnboarding() : null">
+        </div>
+
+    </div>
+</div>

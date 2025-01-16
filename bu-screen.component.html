@@ -1,0 +1,52 @@
+<div class="bu">
+    <div class="topnav">
+        <div class="content">
+            <i class="bi bi-house-door" (click)="navigateToHome()"></i>
+            <p>Admin Dashboard</p>
+        </div>
+    </div>
+    <div class="main-content">
+        <div class="headings">
+            <div class="title">
+                <p class="heading">Business units</p>
+                <p class="sub-heading">Explore all the uploaded resources or upload new resources </p>
+            </div>
+            <div class="dropdown-container">
+                <button (click)="toggleDropdown()" class="upload-btn">
+                    UPLOAD RESOURCE(S)
+                </button>
+                <div *ngIf="isDropdownOpen" class="dropdown-menu">
+                    <a (click)="uploadFiles()" class="dropdown-item-internal">Internal Resources <span>></span></a>
+                    <a class="dropdown-item-external">External Resources</a>
+                    <a (click)="openExternalResources('jira')" class="dropdown-item-external-resources">Jira
+                        <span>></span></a>
+                    <a (click)="openExternalResources('confluence')" class="dropdown-item-external-resources">Confluence
+                        <span>></span></a>
+                    <a (click)="openExternalResources('website')" class="dropdown-item-external-resources">Static
+                        website<span>></span></a>
+                </div>
+            </div>
+        </div>
+        <div class="bu-container">
+            <div class="bu-grid">
+                <div class="bu-item" *ngFor="let bu of buList; let i = index">
+                    <button class="bu-button" (click)="navigateToProducts(bu)">
+                        <i class="bi bi-circle-fill" [ngStyle]="{'color': buttonColors[i % buttonColors.length]}"></i>{{
+                        bu }}
+                        <p>></p>
+                    </button>
+                </div>
+
+                <!-- Add ghost buttons to make the total divisible by 4 -->
+                <ng-container *ngIf="(buList.length % 4) !== 0">
+                    <div class="bu-item" *ngFor="let ghost of [].constructor(4 - (buList.length % 4))">
+                        <button class="ghost-button"></button>
+                    </div>
+                </ng-container>
+            </div>
+        </div>
+    </div>
+    <app-upload *ngIf="showPopup" (close)="closePopup()"></app-upload>
+    <app-upload-external-dependencies *ngIf="showExternalDepedencyPopup"
+        (close)="closePopup()"></app-upload-external-dependencies>
+</div>

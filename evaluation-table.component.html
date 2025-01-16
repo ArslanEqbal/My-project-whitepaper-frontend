@@ -1,0 +1,234 @@
+<div class="product">
+    <div class="topnav">
+        <div class="content">
+            <i class="bi bi-house-door" (click)="navigateToHome()"></i>
+            <p>Evaluation Framework</p>
+            <div class="kpi-glossary" (click)="navigateToGlossary()">VIEW KPI GLOSSARY</div>
+        </div>
+        <div class="progress-bar-before-processing" *ngIf="showProgressStatus && uploadStatus && !processingError">
+            <i class="bi bi-clock"></i>
+            <p>{{triggeredByUsername}} : Evaluation for {{processingAppVersion}} in progress. Please wait...</p>
+        </div>
+        <div class="progress-bar-processing-error" *ngIf="processingError">
+            <i class="bi bi-exclamation-triangle"></i>
+            <p>{{triggeredByUsername}} : {{processingErrorMessage}}</p>
+        </div>
+        <div class="progress-bar-after-deleting" *ngIf="deleteStatus && !(showProgressStatus || uploadStatus)">
+            <i class="bi bi-info-circle"></i>
+            <p *ngIf="totalDeletedFiles > 0 && evalList.length != 0">
+                {{triggeredByUsername}} : {{ totalDeletedFiles }} evaluation(s) have been removed</p>
+            <p *ngIf="evalList.length == 0">
+                {{triggeredByUsername}} : All evaluations have been removed. Upload new evaluations to view in
+                the GenAI Assistant.</p>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="headings">
+            <div class="title">
+                <p class="heading">Evaluations</p>
+                <p class="sub-heading">Explore the list of evaluations processed for a product</p>
+            </div>
+            <!-- ACTION BUTTON -->
+            <div class="search-input-container">
+                <!-- <div *ngIf="loading" class="spinner"></div>
+                <div class="search-wrapper">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" placeholder="Search..." (input)="onSearch($event)" class="search-input" />
+                </div> -->
+                <div class="dropdown-container">
+                    <button (click)="toggleDropdown()" class="upload-btn">
+                        ACTION HUB
+                    </button>
+                    <div *ngIf="isDropdownOpen" class="dropdown-menu">
+
+                        <a (click)="!isNewEvaluationButtonDisabled ? openUploadPopup() : null" class="dropdown-item"
+                            [ngClass]="{ 'disabled-link': isNewEvaluationButtonDisabled }">
+                            <i class="bi bi-file-earmark-text"></i>New Evaluation
+                        </a>
+
+                        <a (click)="!isDownloadDeleteButtonDisabled ? downloadFiles() : null" class="dropdown-item"
+                            [ngClass]="{ 'disabled-link': isDownloadDeleteButtonDisabled }">
+                            <i class="bi bi-download"></i>Download Evaluation(s)
+                            <!-- Tooltip element -->
+                            <span class="tooltip-menu">
+                                {{ isDownloadDeleteButtonDisabled ? 'No Evaluation available' : 'Save Evaluation
+                                results to
+                                your system' }}
+                            </span>
+                        </a>
+
+                        <a (click)="!isDownloadDeleteButtonDisabled ? deleteFiles() : null" class="dropdown-item-last"
+                            [ngClass]="{ 'disabled-link': isDownloadDeleteButtonDisabled }">
+                            <i class="bi bi-trash"></i>Delete Evaluation(s)
+                            <!-- Tooltip element -->
+                            <span class="tooltip-menu">
+                                {{ isDownloadDeleteButtonDisabled ? 'No Evaluation available' : 'Remove Evaluation
+                                results from
+                                storage' }}
+                            </span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="user-home">
+            <div class="bu-product-selection">
+                <div class="dropdown">
+                    <!-- BU DROPDOWN -->
+                    <select [(ngModel)]="selectedBU" (change)="onBUChange($event)" [disabled]="isAdmin || loading">
+                        <option value="" disabled>Select BU</option>
+                        <option *ngFor="let bu of buList" [value]="bu">{{ bu }}</option>
+                    </select>
+
+                    <!-- PROD DROPDOWN -->
+                    <select [(ngModel)]="selectedProduct" (change)="onProductChange($event)" [disabled]="loading">
+                        <option value="" disabled>Select Product</option>
+                        <option *ngFor="let product of products" [value]="product">{{ product }}</option>
+                    </select>
+
+                    <!-- USECASE DROPDOWN -->
+                    <select [(ngModel)]="selectedUsecase" (change)="onUsecaseChange($event)" [disabled]="loading">
+                        <option value="" disabled>Select Usecase</option>
+                        <option value="qa">Q&A Chatbot</option>
+                        <option value="om">Onboarding Material</option>
+                    </select>
+
+                    <!-- LOADER  -->
+                    <div *ngIf="loading" class="spinner"></div>
+                </div>
+            </div>
+        </div>
+        <div class="product-container">
+            <div class="delete-download-options" *ngIf="wantTodownloadFiles && evalList.length != 0">
+                <div class="summary-btn">
+                    <i class="bi bi-download"></i>
+                    <button (click)="downloadSummary()" style="color: #C4161C;" title="Download all results">DOWNLOAD
+                        SUMMARY</button>
+                </div>
+                <div style="display: flex;">
+                    <div class="top-delete-button-container">
+                        <i class="bi bi-download"></i>
+                        <button (click)="downloadSelectedFiles()" style="color: #C4161C;"
+                            [disabled]="selectedEvaluationNames.length == 0"
+                            title="Select resources to download">DOWNLOAD
+                            SELECTIONS</button>
+                    </div>
+                    <div class="top-download-button-container">
+                        <button (click)="cancelDownloadDelete()" title="Cancel download">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="delete-options" *ngIf="wantTodeleteFiles && evalList.length != 0">
+                <div class="top-delete-button-container">
+                    <i class="bi bi-trash"></i>
+                    <button (click)="showDeletionPopup()" [disabled]="selectedEvaluationNames.length == 0"
+                        style="color: #C4161C;" title="Select resources to delete">DELETE SELECTIONS</button>
+                </div>
+                <div class="top-download-button-container">
+                    <button (click)="cancelDownloadDelete()" title="Cancel delete">Cancel</button>
+                </div>
+            </div>
+            <table class="table table-hover align-middle mb-0 bg-white table-bordered" *ngIf="evalList.length > 0">
+                <thead class="table-thead-custom">
+                    <tr>
+                        <th>App Version</th>
+                        <th class="text-center" title="in GMT">Date</th>
+                        <th class="text-center">Added By</th>
+                        <th class="text-center">Total Count</th>
+                        <th class="text-center">Contextual Precision</th>
+                        <th class="text-center">Contextual Recall</th>
+                        <th class="text-center">Contextual Relevancy</th>
+                        <th class="text-center">Answer Relevancy</th>
+                        <th class="text-center">Faithfulness</th>
+                        <th *ngIf="wantTodownloadFiles || wantTodeleteFiles">
+                            <input type="checkbox" (change)="toggleSelectAll($event)" [checked]="isAllSelected" />
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let row of evalList.slice(startIndex(), endIndex())">
+                        <td>{{ row.appVersion }}</td>
+                        <td title="in GMT" *ngIf="row.timestamp != '7777-12-31 12:00:00'">{{ row.timestamp }}</td>
+                        <td *ngIf="row.timestamp == '7777-12-31 12:00:00'">Processing</td>
+                        <td *ngIf="row.isAggregated">{{ row.username }}</td>
+                        <td *ngIf="row.isAggregated">{{ row.total_count }}</td>
+                        <td *ngIf="row.isAggregated">{{ row.contextualPrecision }}</td>
+                        <td *ngIf="row.isAggregated">{{ row.contextualRecall }}</td>
+                        <td *ngIf="row.isAggregated">{{ row.contextualRelevancy }}</td>
+                        <td *ngIf="row.isAggregated">{{ row.answerRelevancy }}</td>
+                        <td *ngIf="row.isAggregated">{{ row.faithfulness }}</td>
+                        <td *ngIf="wantTodownloadFiles || wantTodeleteFiles">
+                            <input type="checkbox" class="checkbox" (change)="onFileSelection($event, row.appVersion)"
+                                [checked]="selectedEvaluationNames.includes(row.appVersion)" />
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- <div *ngIf="!evalList.length && !loading" class="alert alert-warning text-center">
+                No evaluation data found. Check uploaded files or try again later.
+              </div> -->
+
+            <div class="delete-download" *ngIf="selectedEvaluationNames.length > 0">
+                <p class="deletion-message" *ngIf="deletionMessage && !deletionError">{{ deletionMessage }}</p>
+                <div *ngIf="isDownloading" class="deletion-message">Downloading records...</div>
+
+                <div class="selected-count">
+                    {{ selectedEvaluationNames.length }} record(s) selected
+                    <i class="bi bi-x-circle remove-all" (click)="removeAllSelectedFiles()" title="Remove All"></i>
+                </div>
+            </div>
+            <div class="actions">
+                <div class="pagination" *ngIf="totalPages() > 1">
+                    <button (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1">
+                        < </button>
+                            <span>{{ currentPage }}/{{ totalPages() }}</span>
+                            <button (click)="changePage(currentPage + 1)"
+                                [disabled]="currentPage >= totalPages()">></button>
+                </div>
+            </div>
+
+            <!-- Message when no evaluations are available AND DROPDOWNS ARE SELECTED-->
+            <div *ngIf="!noSelection && evalList.length === 0" class="no-documents-message">
+                <i class="bi bi-exclamation-triangle" style="font-size: 24px; color: #C4161C;"></i>
+                <p>No evaluation data available for the selected product and usecase.</p>
+                <p>Please try selecting a different product to see the available evaluation result.</p>
+            </div>
+
+            <!-- Message when no evaluations are available AND DROPDOWNS ARE NOT SELECTED-->
+            <div *ngIf="noSelection && evalList.length === 0" class="no-documents-message">
+                <img style="margin-top: 20px;" src="select-filters.png">
+                <p style="margin-bottom: 20px;">Select above options to view evaluations added</p>
+            </div>
+
+            <!-- DELETE Confirmation Popup -->
+            <div class="confirmation-popup" *ngIf="showDeletionConfirmation && !deletionError">
+                <p class="text1"><i class="bi bi-trash"></i>Are you sure you want to delete the selected resource(s)?
+                </p>
+                <p class="text2">It will be permanently deleted and won't be available for the GenAI Assistant</p>
+                <div class="btn-container">
+                    <div *ngIf="isDeleting" class="spinner"></div>
+                    <div *ngIf="isDeleting" class="deleting-message">Deleting resources...</div>
+                    <button class="cancel" (click)="showDeletionConfirmation = false">CANCEL</button>
+                    <button class="delete" (click)="deleteSelectedFiles()">DELETE</button>
+                </div>
+            </div>
+
+            <!-- DELETE ERROR POPUP -->
+            <div class="confirmation-popup" *ngIf="showDeletionConfirmation && deletionError">
+                <p class="text1-error">Delete Failed</p>
+                <p class="text2">{{errorMessage}}</p>
+                <div class="btn-container">
+                    <button class="cancel" (click)="showDeletionConfirmation = false">OK</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<app-add-evaluation *ngIf="showPopup" (close)="closePopup()"></app-add-evaluation>

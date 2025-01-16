@@ -1,0 +1,192 @@
+<div class="overlay">
+    <div class="popup-content" #scrollContainer>
+        <div class="upload-label" *ngIf="!uploadCompleted && !errorMessage">
+            <p>External resources</p>
+            <div *ngIf="loading" class="spinner"></div>
+            <button (click)="closePopup()">x</button>
+        </div>
+        <div class="fields">
+            <div class="bu-product" *ngIf="!isDocumentsComponent">
+                <label>Select BU and Product</label>
+                <div class="bu-product-selection">
+                    <select [(ngModel)]="selectedBU" (change)="onBUChange($event)">
+                        <option value="" disabled>BU</option>
+                        <option *ngFor="let bu of buList" [value]="bu">{{ bu }}</option>
+                    </select>
+                    <select [(ngModel)]="selectedProduct" (change)="onProductChange($event)">
+                        <option value="" disabled>Product</option>
+                        <option *ngFor="let product of products" [value]="product">{{ product }}</option>
+                    </select>
+                </div>
+            </div>
+            <ng-container *ngIf="!uploadCompleted && !errorMessage">
+                <div class="resources-jira" *ngIf="resourceType === 'jira'">
+                    <div class="resource-type">
+                        <label>Resource type</label>
+                        <select disabled>
+                            <option>Jira</option>
+                        </select>
+                    </div>
+                    <div class="jira">
+                        <label>Jira Project</label>
+                        <select [(ngModel)]="selectedProject" (change)="onProjectChange()" [disabled]="loading">
+                            <option [value]="" disabled selected>Select a project</option>
+                            <option *ngFor="let jira_project of jira_projects" [value]="jira_project">{{ jira_project }}
+                            </option>
+                        </select>
+                        <div class="label-container" *ngIf="selectedProject">
+                            <label>Jira Board</label>
+                            <div class="ticket-count" *ngIf="selectedJiraTicketsCount > 0">Ticket Count: {{
+                                selectedJiraTicketsCount }}</div>
+                        </div>
+                        <select [(ngModel)]="selectedBoard" (change)="onBoardChange()" *ngIf="selectedProject">
+                            <option [value]="" disabled>Select a board</option>
+                            <option *ngFor="let list_of_board_name of list_of_board_names" [value]="list_of_board_name">
+                                {{ list_of_board_name }}</option>
+                        </select>
+                    </div>
+                    <div class="pii">
+                        <label class="pii_heading">GDPR Compliance Reminder</label>
+                        <div class="compliance">
+                            <input type="checkbox" [(ngModel)]="pii_confirm" (change)="onPIIChange($event)">
+                            <label>I confirm that the uploaded resources do not contain any Personally Identifiable
+                                Information (PII) as per EU GDPR regulations
+                                and the files comply with these guidelines.
+                                <span style="font-style: italic;">If unsure, review the content or consult your Data
+                                    Protection Officer.</span></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="resources-confluence" *ngIf="resourceType === 'confluence'">
+                    <div class="resource-type">
+                        <label>Resource type</label>
+                        <select disabled>
+                            <option>Confluence</option>
+                        </select>
+                    </div>
+                    <div class="confluence">
+                        <div class="label-container">
+                            <label>Confluence Space</label>
+                            <div class="doc-count" *ngIf="selectedConfluenceDocCount > 0">Document Count: {{
+                                selectedConfluenceDocCount }}</div>
+                        </div>
+                        <select [(ngModel)]="selectedSpace" (change)="onSpaceChange()">
+                            <option [value]="" disabled>Select a space</option>
+                            <option *ngFor="let list_of_space_name of list_of_space_names" [value]="list_of_space_name">
+                                {{ list_of_space_name }}</option>
+                        </select>
+                    </div>
+                    <div class="pii">
+                        <label class="pii_heading">GDPR Compliance Reminder</label>
+                        <div class="compliance">
+                            <input type="checkbox" [(ngModel)]="pii_confirm" (change)="onPIIChange($event)">
+                            <label>I confirm that the uploaded resources do not contain any Personally Identifiable
+                                Information (PII) as per EU GDPR regulations
+                                and the files comply with these guidelines.
+                                <span style="font-style: italic;">If unsure, review the content or consult your Data
+                                    Protection Officer.</span></label>
+                        </div>
+                    </div>
+                </div>
+                <!-- Website Resource Section -->
+                <div class="resources-website" *ngIf="resourceType === 'website'">
+                    <div class="website_url_fields">
+                        <div class="resource-type">
+                            <label>Resource Type</label>
+                            <select disabled>
+                                <option>Website</option>
+                            </select>
+                        </div>
+
+                        <!-- Website URL Field -->
+                        <div class="website">
+                            <label>Website URL</label>
+                            <input type="text" [(ngModel)]="websiteInput" placeholder="Enter link"
+                                (ngModelChange)="onWebsiteInputChange($event)" />
+                            <div *ngIf="isValidUrl === false" class="error-message">Invalid URL. Please enter a valid
+                                website link.</div>
+                        </div>
+                    </div>
+                    <!-- Include Sub-Links Checkbox -->
+
+                    <div class="include-sublinks">
+                        <input type="checkbox" [(ngModel)]="includeSublinks" (change)="onIncludeSublinksChange($event)">
+                        <label>Include content from sub-links</label>
+                        <button (click)="toggleInfoPopup()" class="info-icon">Know more <i
+                                class="bi bi-info-circle"></i></button>
+
+                        <!-- Tooltip popup content -->
+                        <div *ngIf="isInfoPopupVisible" class="info-popup">
+                            <img src="web_scrapping.png" alt="Info Image" />
+                            <p>Click outside to close this popup</p>
+                        </div>
+                    </div>
+
+                    <!-- Depth and Width Input Fields (appear only if checkbox is checked) -->
+                    <div *ngIf="includeSublinks" class="dimensions">
+                        <div class="sublink_data">
+                            <label>Depth</label>
+                            <input type="number" [(ngModel)]="depth" [ngClass]="{ 'invalid-input': isDepthInvalid }" min="1" max="1000" (input)="validateDepth($event)" />
+                        </div>
+                        <div class="sublink_data">
+                            <label>Width</label>
+                            <input type="number" [(ngModel)]="width" [ngClass]="{ 'invalid-input': isWidthInvalid }" min="1" max="1000" (input)="validateWidth($event)" />
+                        </div>
+                    </div>
+                    <div *ngIf="isDepthInvalid || isWidthInvalid" class="dimension_error">
+                        Please enter a value between 1 and 1000.
+                      </div>
+
+                    <!-- Links Extracted and Warning -->
+                    <div *ngIf="includeSublinks && depth && width" class="links-extracted">
+                        <span [class.warning]="linksExtracted > 100 && linksExtracted < 1000"
+                            [class.warning2]="linksExtracted >= 1000">Links Extracted: upto <span
+                                style="font-weight: bold;">{{ linksExtracted }} link(s)</span></span>
+
+                        <p *ngIf="linksExtracted > 100 && linksExtracted < 1000" class="warning-message"><i
+                                class="bi bi-exclamation-triangle"></i> Too many links may increase
+                            processing time to a few hours.</p>
+                        <p *ngIf="linksExtracted >= 1000" class="warning-message2"><i
+                                class="bi bi-exclamation-triangle"></i>
+                            Too many links! Please reduce the depth or the width.</p>
+                    </div>
+
+                    <div class="pii">
+                        <label class="pii_heading">GDPR Compliance Reminder</label>
+                        <div class="compliance">
+                            <input type="checkbox" [(ngModel)]="pii_confirm" (change)="onPIIChange($event)">
+                            <label>I confirm that the uploaded resources do not contain any Personally Identifiable
+                                Information (PII) as per EU GDPR regulations
+                                and the files comply with these guidelines.
+                                <span style="font-style: italic;">If unsure, review the content or consult your Data
+                                    Protection Officer.</span></label>
+                        </div>
+                    </div>
+                </div>
+            </ng-container>
+            <div class="proceed-div" *ngIf="!uploadCompleted && !errorMessage && (pii_confirm)">
+                <div *ngIf="isUploading" class="uploading-message">Uploading resources...</div>
+                <button class="proceed-uploading" [disabled]="!selectedBU || !selectedProduct || 
+                (resourceType === 'website' && !websiteInput) || 
+                (resourceType === 'website' && isValidUrl === false) || 
+                (resourceType === 'website' && linksExtracted >= 1000 ) ||
+                (this.resourceType === 'website' && this.includeSublinks && (!this.depth || !this.width || this.depth < 1 || this.width < 1)) ||
+                (this.resourceType == 'confluence' && !this.selectedSpace) ||
+                (this.resourceType == 'jira' && !this.selectedBoard)" 
+                [attr.title]="getProceedButtonTooltip()"
+                    (click)="generateExternalReport()">PROCEED</button>
+            </div>
+            <ng-container *ngIf="uploadCompleted || errorMessage">
+                <div *ngIf="uploadCompleted" class="upload-message">
+                    <p class="successtext1"><i class="bi bi-check-circle-fill text-success"></i> Upload completed. The
+                        resources will now be processed.</p>
+                </div>
+                <div *ngIf="errorMessage" class="upload-message">
+                    <p class="errortext1"><i class="bi bi-exclamation-triangle" style="color: #C4161C;"></i> Upload
+                        Failed!</p>
+                    <p class="errortext2">{{ errorMessage }}</p>
+                </div>
+            </ng-container>
+        </div>
+    </div>
+</div>

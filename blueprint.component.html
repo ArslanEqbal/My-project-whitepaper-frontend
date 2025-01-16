@@ -1,0 +1,99 @@
+<div class="blueprint">
+    <div class="topnav">
+        <div class="content">
+            <i class="bi bi-arrow-left" (click)="navigateToDocuments()"></i>
+            <p>Generate Material</p>
+        </div>
+    </div>
+    <div class="main-content">
+        <div class="headings">
+            <div class="title">
+                <p class="breadcrumbs"><span class="breadcrumbs" (click)="navigateToBUList()">Business units</span> >
+                    <span class="breadcrumbs" (click)="navigateToProducts()">{{BuName}}</span> >
+                    <span class="breadcrumbs" (click)="navigateToDocuments()">{{productName}}</span>
+                </p>
+                <p class="heading">Blueprint</p>
+                <p class="sub-heading">Please identify the sections to include in the onboarding material. You may also
+                    incorporate
+                    detailed subheadings and descriptions for each section, or introduce new sections as needed.</p>
+            </div>
+            <div class="actions">
+                <button [disabled]="isFormInvalid()" (click)="saveBlueprint()">SAVE & PROCEED</button>
+                <div *ngIf="loading" class="spinner"></div>
+            </div>
+        </div>
+        <div class="blueprint-container">
+            <div class="blueprint-content">
+                <ng-container *ngFor="let section of sections; let i = index">
+                    <div class="blueprint-section" [formGroup]="section.form">
+                        <div class="section-title" (click)="toggleCollapse(i)">
+                            <!-- Arrow icon changes based on collapse state -->
+                            <i [class]="isCollapsed[i] ? 'bi bi-chevron-down' : 'bi bi-chevron-up'"></i>
+                            <p>Section {{i + 1}}</p>
+                            <div class="delete" (click)="onDeleteSection(i)">
+                                <i class="bi bi-trash"></i>
+                                <button id="delete-{{i}}">DELETE</button>
+                            </div>
+                        </div>
+
+                        <!-- Collapsible content -->
+                        <div *ngIf="!isCollapsed[i]" class="collapsible-content">
+                            <div class="formgroup">
+                                <div class="section-heading">
+                                    <label for="heading">Heading:</label>
+                                    <textarea id="heading-textarea" formControlName="heading" required></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Sub-sections -->
+                            <ng-container *ngFor="let subSection of section.subSections; let j = index">
+                                <div class="formgroup sub-section" [formGroup]="subSection.form">
+                                    <div class="remove" *ngIf="section.subSections.length > 1"
+                                        (click)="onRemoveSubSection(i, j)">
+                                        <i class="bi bi-x-circle"></i>
+                                        <button id="remove-{{i}}">REMOVE</button>
+                                    </div>
+                                    <div class="section-subheading">
+                                        <label for="sub-heading">Subheading {{j + 1}}:</label>
+                                        <textarea id="sub-heading-textarea" formControlName="subheading"
+                                            required></textarea>
+                                    </div>
+                                    <div class="section-description">
+                                        <label for="description">Description:</label>
+                                        <textarea id="description-textarea" formControlName="description"
+                                            required></textarea>
+                                    </div>
+                                </div>
+                            </ng-container>
+                            <div class="add-more">
+                                <button id="add-more-{{i}}" (click)="onAddSubSection(i)"><i class="bi bi-plus"></i> ADD
+                                    SUB-SECTION</button>
+                            </div>
+                        </div>
+                    </div>
+                </ng-container>
+            </div>
+            <div class="add-section">
+                <button (click)="onAddSection()"><i class="bi bi-plus"></i> ADD SECTION</button>
+            </div>
+        </div>
+    </div>
+    <div class="confirmation-popup" *ngIf="showGenerationConfirmation">
+        <p class="text1">Confirm the Report name</p>
+        <p class="text2">Name given below will be assigned to the generated material</p>
+        <input type="text" class="name-input" [(ngModel)]="reportName" placeholder="Enter report name"
+            (input)="checkReportName()" />
+            
+        <!-- Display error message if name is invalid -->
+        <div *ngIf="!isReportNameValid" class="error-message">
+            <p>{{ reportNameError }}</p>
+        </div>
+        <div *ngIf="!areResourceProcessed" class="uploading-message">Resources are still processing. Come back later!
+        </div>
+        <div class="btn-container">
+            <button class="cancel" (click)="abortSave()">CANCEL</button>
+            <button class="deletepop" [disabled]="!areResourceProcessed" (click)="generateReport()">GENERATE
+                MATERIAL</button>
+        </div>
+    </div>
+</div>

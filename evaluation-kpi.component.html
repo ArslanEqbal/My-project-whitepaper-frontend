@@ -1,0 +1,46 @@
+<div class="product">
+    <div class="topnav">
+        <div class="content">
+            <i class="bi bi-arrow-left" (click)="navigateBack()"></i>
+            <div>Evaluation Framework</div>
+        </div>
+    </div>
+    <div class="main-content">
+
+        <div class="section-header">
+            <p>FLOW</p>
+        </div>
+        <!-- image   -->
+        <div class="section-image" id="eval-image">
+            <img class="eval-img" src="evaluation.png" alt="Image depicting the flow of the evaluation framework">
+        </div>
+
+        <!-- Table -->
+        <div class="section" id="eval-kpi-table">
+            <div class="section-header">
+                <p>KPI Glossary</p>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>KPI</th>
+                            <th>Description</th>
+                            <th>Inference</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let row of evaluationKpiData">
+                            <td>{{ row.kpi }}</td>
+                            <td>{{ row.description }}</td>
+                            <td>{{ row.inference }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <p class="eval-disclaimer">PS: All KPIs are on scale of 0 to 1. A Higher score indicates better performance on
+            the Evaluation Metric​</p>
+    </div>
+</div>

@@ -1,0 +1,45 @@
+<div>
+    <div class="background-image">
+        <img src="login_image1.png">
+    </div>
+    <div class="login-container">
+        <div class="left-section">
+            <h5>EG Onboarding Assistant</h5>
+            <p>Harness the power of Generative AI to provide a dynamic and seamless onboarding experience, ensuring new
+                team members are fully integrated and productive from day one.</p>
+        </div>
+        <div class="right-section">
+            <div class="login-content">
+                <div class="logo-info">
+                    <img src="eg_logo.png">
+                    <p>Welcome, please login into your account</p>
+                </div>
+                <form [formGroup]="loginForm" (ngSubmit)="login()">
+                    <div class="form-group">
+                        <div class="username-label">
+                            <img src="username.png">
+                            <label>USERNAME</label>
+                        </div>
+                        <input type="text" formControlName="username" id="email" class="form-control"
+                            placeholder="Enter here" required>
+                    </div>
+                    <div class="form-group">
+                        <div class="password-label">
+                            <img src="password.png">
+                            <label>PASSWORD</label>
+                        </div>
+                        <input type="password" formControlName="password" id="password" class="form-control"
+                            placeholder="Enter here" required>
+                    </div>
+                    <div class="error-message" *ngIf="errorMessage"><i class="bi bi-info-circle"></i> Incorrect username
+                        or password</div>
+                    <button type="submit" [disabled]="!loginForm.valid">LOGIN HERE</button>
+
+                </form>
+                <button  (click)="loginSSO()">SSO Login</button>
+
+                <p class="deloitte">Powered by &nbsp; <span><strong style="color: black;"> Deloitte</strong></span></p>
+            </div>
+        </div>
+    </div>
+</div>

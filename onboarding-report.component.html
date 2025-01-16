@@ -1,0 +1,78 @@
+<div class="product">
+    <div class="topnav">
+        <div class="content">
+            <i class="bi bi-house-door" (click)="navigateToHome()"></i>
+            <p>Onboarding Material</p>
+        </div>
+    </div>
+    <div class="main-content">
+        <div class="title">
+            <p class="heading">Select the following to continue</p>
+            <p class="sub-heading">Explore all the generated onboarding materials for a product</p>
+        </div>
+        <div class="user-home">
+            <div class="bu-product-selection">
+                <select [(ngModel)]="selectedBU" (change)="onBUChange($event)" [disabled]="isUser || isAdmin">
+                    <option value="" disabled>BU</option>
+                    <option *ngFor="let bu of buList" [value]="bu">{{ bu }}</option>
+                </select>
+                <select [(ngModel)]="selectedProduct" (change)="onProductChange($event)" [disabled]="isUser">
+                    <option value="" disabled>Product</option>
+                    <option *ngFor="let product of products" [value]="product">{{ product }}</option>
+                </select>
+            </div>
+            <div class="actions">
+                <button (click)="getListOfFiles()">SEARCH</button>
+                <div *ngIf="loading" class="spinner"></div>
+            </div>
+        </div>
+
+        <div class="product-container">
+            <table class="table table-hover align-middle mb-0 bg-white table-bordered" *ngIf="documentNames.length >0">
+                <thead class="table-thead-custom" *ngIf="documentNames.length >0">
+                    <tr>
+                        <th style="padding-left: 18px;">Material Name</th>
+                        <th class="text-center">Generated Date</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let documentName ; let i = index of documentNames">
+                        <td>
+                            <button type="button" class="btn btn-sm btn-rounded">
+                                {{documentName}}
+                            </button>
+                        </td>
+                        <td class="text-center" title="in GMT">{{uploadedDate[i]}}</td>
+
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-rounded reportbtn"
+                                (click)="downloadReport(documentName)">
+
+                                <span class="icon-container">
+                                    <!-- Conditionally show the tick or the copy icon -->
+                                    <i *ngIf="downloadingDocument === documentName" class="bi bi-check check-icon"
+                                        title="Downloaded!"></i>
+                                    <i class="bi bi-download" title="Download"></i>
+                                </span>
+                                Download
+                            </button>
+                            <span *ngIf="!isUser">|</span>
+                            <!-- Delete button -->
+                            <button type="button" class="btn btn-sm btn-rounded deletebtn" *ngIf="!isUser"
+                                (click)="deleteReport(documentName)">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <!-- Message when no documents are available -->
+            <div *ngIf="documentNames.length === 0 && isSearchClicked" class="no-documents-message">
+                <i class="bi bi-exclamation-triangle" style="font-size: 24px; color: #C4161C;"></i>
+                <p>No documents available for the selected BU and product.</p>
+                <p>Please try selecting a different BU or product to see available onboarding materials.</p>
+            </div>
+        </div>
+    </div>
+</div>

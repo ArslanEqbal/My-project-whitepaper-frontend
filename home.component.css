@@ -1,0 +1,203 @@
+.home {
+    top: 20%;
+    overflow: hidden;
+}
+
+.bg_images {
+    display: flex;
+    position: absolute;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    z-index: -1;
+}
+
+.bg1 {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+}
+
+.main-content {
+    box-sizing: border-box;
+    position: absolute;
+    width: 90vw;
+    height: 80vh;
+    left: 4vw;
+    top: 15vh;
+    background: rgba(244, 244, 244, 0.46);
+    border: 1px solid #DDDDDD;
+    backdrop-filter: blur(7.35px);
+    padding: 20px;
+    border-radius: 16px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+
+.heading {
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 40px;
+    margin-top: 40px;
+}
+
+.upper-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2vh;
+}
+
+.option-image {
+    border-radius: 8px;
+    width: 40vw;
+    /* Admin Dashboard width */
+    max-width: 100%;
+    transition: transform 0.3s ease-in-out;
+}
+
+.option-image:hover {
+    transform: scale(1.025);
+    cursor: pointer;
+}
+
+.divider-bar {
+    height: 2px;
+    width: 57vw;
+    background-color: rgba(0, 0, 0, 0.1);
+    margin: 40px auto;
+}
+
+.lower-row {
+    display: flex;
+    /* justify-content: center; */
+    width: 40vw;
+    /* margin: 0 auto; */
+    margin-top: 20px;
+    gap: 10px;
+    margin-left: 17.5%;
+}
+
+.lower-row img {
+    width: 28vw;
+    /* Adjust width to fit both images */
+}
+
+.lower-row-user{
+    display: flex;
+    /* justify-content: center; */
+    width: 40vw;
+    /* margin: 0 auto; */
+    margin-top: 20px;
+    gap: 10px;
+    margin-left: 27.5%;
+}
+
+.lower-row-user img {
+    width: 28vw;
+    /* Adjust width to fit both images */
+}
+
+
+/* Disable pointer events and add opacity to indicate the images are not clickable */
+.option-image.disabled {
+    pointer-events: none;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Add a hover effect only when the images are clickable */
+.option-image:not(.disabled):hover {
+    transform: scale(1.05);
+    cursor: pointer;
+}
+
+
+@media (max-width: 768px) {
+    .main-content {
+        width: 90%;
+        height: auto;
+    }
+
+    .divider-bar,
+    .lower-row {
+        width: 85%;
+    }
+
+    .lower-row {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .lower-row img {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+}
+
+
+/* For user role layout */
+.user-home {
+    max-width: 100%;
+    margin: 0 17.5%;
+    text-align: center;
+}
+
+.user-home h3 {
+    font-size: 1.15rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+
+.bu-product-selection {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: flex-start;
+    gap: 10px;
+}
+
+.bu-product-selection select {
+    padding: 10px;
+    border-radius: 12px;
+    width: 18vw;
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 0.7rem;
+    line-height: 18px;
+    color: #000000;
+}
+
+.bu-product-selection select:focus {
+    outline: none;
+}
+
+.bu-product-selection option {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 0.7rem;
+    line-height: 24px;
+    color: #000000;
+}
+
+.head {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    margin-left: 17.5%;
+    margin-right: 10px;
+}
+
+
+.vertical-line {
+    width: 4px;
+    height: 23px;
+    background: #568192;
+    margin-right: 10px;
+}

@@ -1,0 +1,182 @@
+<div class="overlay" (click)="closePopup($event)">
+    <div class="popup-content" (click)="$event.stopPropagation()">
+        <div class="stepper" *ngIf="current_step ==1">
+            <div class="step1">
+                <p class="number">1</p>
+                <p class="text">Evaluation details</p>
+            </div>
+            <div class="step2">
+                <p class="number" style="background: #F5F5F5; color: #000000;">2</p>
+                <p class="text">Upload file</p>
+            </div>
+        </div>
+        <div class="stepper" *ngIf="current_step ==2">
+            <div class="step1">
+                <p class="number">1</p>
+                <p class="text">Evaluation details</p>
+            </div>
+            <div class="step2">
+                <p class="number">2</p>
+                <p class="text">Upload file</p>
+            </div>
+        </div>
+        <div style="border-top: 1px solid #E8E8E8;"></div>
+
+
+        <div class="inital_details" *ngIf="current_step == 1">
+            <div class="product_name">
+                <label>BU <span style="color: #c41617;">*</span></label>
+                <!-- BU DROPDOWN -->
+                <select [(ngModel)]="selectedBU" (change)="onBUChange($event)" [disabled]="isAdmin">
+                    <option value="" disabled>Select</option>
+                    <option *ngFor="let bu of buList" [value]="bu">{{ bu }}</option>
+                </select>
+            </div>
+
+            <div class="product_name">
+                <label>Product <span style="color: #c41617;">*</span></label>
+                <select [(ngModel)]="selectedProduct" (change)="onProductChange($event)">
+                    <option value="" disabled>Select</option>
+                    <option *ngFor="let product of products" [value]="product">{{ product }}</option>
+                </select>
+            </div>
+
+            <div class="product_name">
+                <label>Usecase <span style="color: #c41617;">*</span></label>
+                <!-- USECASE DROPDOWN -->
+                <select [(ngModel)]="selectedUsecase" (change)="onUsecaseChange($event)">
+                    <option value="" disabled>Select</option>
+                    <option value="qa">Q&A Chatbot</option>
+                    <option value="om">Onboarding Material</option>
+                </select>
+            </div>
+
+            <div class="summary_name">
+                <label>Unique Name <span style="color: #c41617;">*</span></label>
+                <input [(ngModel)]="uniqueName" placeholder="Enter a unique name" type="text"
+                    (input)="checkUniqueName()">
+            </div>
+            <!-- Error Message -->
+            <div *ngIf="uniqueNameError" class="unique-error-message">
+                {{ uniqueNameError }}
+            </div>
+            <!-- Availability Message -->
+            <div *ngIf="uniqueNameMessage"
+                [ngClass]="{'success-message': isUniqueName, 'unique-error-message': !isUniqueName}">
+                {{ uniqueNameMessage }}
+            </div>
+
+            <!-- Loader next to Proceed button -->
+            <div class="proceed" *ngIf="current_step == 1">
+                <button
+                    [disabled]="!(selectedBU && selectedProduct && selectedUsecase)|| isProceeding || !uniqueName ||  !isUniqueName"
+                    (click)="goToNextStep()" class="confirm">Proceed</button>
+                <button (click)="closePopup()" class="cancel">Cancel</button>
+                <div *ngIf="isProceeding" class="deleting-message">Checking evaluation details...</div>
+
+                <div *ngIf="isProceeding" class="spinner"></div>
+            </div>
+        </div>
+
+
+        <div class="upload-file" *ngIf="current_step == 2">
+            <span class="heading1" style="margin-top: 0px;">Excel Template</span>
+
+            <div style="display: flex;">
+                <span class="mt-1" style="font-size: 13px;">Download the below template excel and fill the relevant information</span>
+                <button (click)="toggleInfoPopup()" class="info-icon">Know more <i class="bi bi-info-circle"></i></button>
+            </div>
+
+            <!-- QA Tooltip popup content -->
+            <div *ngIf="isInfoPopupVisible && selectedUsecase == 'qa'" class="info-popup">
+                <div style="display: flex;justify-content: space-between;align-items: center;">
+                    <p class="info-heading">KNOW MORE</p>
+                    <button class="info-close" title="Close" (click)="toggleInfoPopup()">x</button>
+                </div>
+                <img src="qa_template.png" alt="Chatbot Template" />
+                <ul>
+                    <li>The template aims at collecting gold examples used as benchmark for ideal output expected by
+                        admin</li>
+                    <li>Upload set of 10 or more questions and expected answers. Detail answer with relevant
+                        keywords/terms and context is required.</li>
+                </ul>
+                <span style="font-size: 12px;"> <span class="info-caution">Caution:</span> Only add Questions if their answers are available in the product's uploaded resources. </span>
+            </div>
+
+            <!--OM Tooltip popup content -->
+            <div *ngIf="isInfoPopupVisible && selectedUsecase == 'om'" class="info-popup">
+                <div style="display: flex;justify-content: space-between;align-items: center;">
+                    <p class="info-heading">KNOW MORE</p>
+                    <button class="info-close" title="Close" (click)="toggleInfoPopup()">x</button>
+                </div>
+                <img src="om_template.png" alt="Onboarding Template" />
+                <ul>
+                    <li>The template aims at collecting gold examples used as benchmark for ideal output expected by
+                        admin</li>
+                    <li>Upload Report section (lowest subsection) name and Detailed description on contents required in
+                        this section (100+ words minimum)</li>
+                    <li>Expected Section Content should precisely include what you want in this section. E.g Steps to
+                        add release notes in Jira for a tester</li>
+                    <li>Break down section such that its related content would range from ~2-3 pages</li>
+                </ul>
+                <span style="font-size: 12px;"> <span class="info-caution">Caution:</span> Only add Report Sections for which the content is available in the product's uploaded resources. </span>
+            </div>
+
+            <div class="template-download mt-1 mb-1" style="display: flex;">
+                <button *ngIf="selectedUsecase == 'qa' " [disabled]="!selectedUsecase || fileToUpload" class="template"
+                    (click)="downloadTemplate()">
+                    <i class="bi bi-download" style="margin-right: 5px;"></i> Download Chatbot Template</button>
+                <button *ngIf="selectedUsecase == 'om' " [disabled]="!selectedUsecase || fileToUpload" class="template"
+                    (click)="downloadTemplate()">
+                    <i class="bi bi-download" style="margin-right: 5px;"></i> Download Onboarding Template</button>
+                <i *ngIf="templateDownloaded" style="color: #30A41C;margin-left: 10px;font-size: 22px;"
+                    class="bi bi-patch-check-fill"></i>
+            </div>
+
+
+            <span class="heading1">Upload the filled excel</span>
+
+            <div class="local mt-1" *ngIf="!fileToUpload">
+                <button (click)="triggerFileInput()" class="fileUploadBtn">
+                    <div>
+                        <i class="bi bi-inbox"></i>
+                        <p class="text1">Click to upload</p>
+                        <p class="text2" style="margin-bottom: 0px;">Support for a single .csv upload only.</p>
+                        <p class="text2" style="font-style: italic; font-size: 11px;">Strictly prohibit from uploading company data or any PII information</p>
+                    </div>
+                    <input type="file" #fileInput (change)="handleFileInput($event)" accept=".csv"
+                        style="display: none" />
+                </button>
+            </div>
+
+            <div *ngIf="fileToUpload" class="file-list-container">
+                <div class="file-list">
+                    <p>
+                        <i class="bi bi-file-earmark-text" style="margin-right: 10px;"></i>{{ fileToUpload.name }}
+                    </p>
+                    <button (click)="removeFile()" [disabled]="isProceeding" class="delete-file-btn">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div *ngIf="errorMessage" class="upload-message">
+                <p class="errortext1">Upload Failed!</p>
+                <p class="errortext2">{{errorMessage}}</p>
+            </div>
+
+            <!-- Loader next to Proceed button -->
+            <div class="proceed" *ngIf="current_step == 2">
+                <button [disabled]="!fileToUpload || isProceeding || errorMessage" (click)="uploadFile()"
+                    class="confirm">Evaluate</button>
+                <button [disabled]="isProceeding" (click)="goToPreviousStep()" class="cancel">Back</button>
+                <div *ngIf="isProceeding" class="deleting-message">Initiating Evaluation...</div>
+                <div *ngIf="isProceeding" class="spinner"></div>
+            </div>
+        </div>
+
+
+
+    </div>
+</div>
